@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Your Title Here</title>
+    <title>Actor Model and Pony</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <!-- This is template for http://remarkjs.com/ by Ole Petter Bang -->
     <!-- CSS modifcations by J. M. Lilly-->
@@ -90,6 +90,12 @@ class: center, middle
 
 ---
 
+# Outline
+- Actor Model
+- How Pony Implements Actor Model
+- Case Study: KiloCore
+
+---
 Programming language design must balance efficiency in execution and expressiveness.
 ---
 "By concurrency we mean the potentially parallel execution of desired actions." - 3
@@ -98,7 +104,7 @@ Programming language design must balance efficiency in execution and expressiven
 ---
 
 Actor Model Theory about concurrency.
-- Better suited for natural models
+- Better suited for natural models.  Parts in natural systems analagous to Actor model.
 ---
 
 # Design Choices
@@ -186,6 +192,54 @@ Computing a task can result in new tasks and new actors.  Processed tasks and ac
 
 Thus we can imagine an actor having both a queue for messages as they arrive and an *actor machine* that points to the message being processed.
 
+---
+<img style="width:100%" src="../figures/AbstractActor.png">
+---
+# Pony - Bank Example
+<img style="width:100%" src="../figures/BankAccount.png">
+---
+<img style="width:100%" src="../figures/Person.png">
+---
+<img style="width:100%" src="../figures/Main.png">
+### Output
+```
+Failure: Not enough funds
+Success. Current Balance: $0
+Success. Current Balance: $101
+```
+- There is no need for locks on the account because BankAccount actor runs atomically.
+---
+
+# KiloCore - First 1000 core CPU
+--
+
+- Each processors operates at 1.78 GHz yielding a maximum total chip computation rate of __1.78 trillion instructions/sec__.
+- 32nm transitors, Made by IBM, which has 7nm transistors.
+
+
+---
+<img style="width:100%"  src="../figures/core.png">
+---
+<img style="width:90%" src="../figures/RouterExample.png">
+.center[Globally Asynchronous Locally Synchronous (GALS)]
+---
+<img style="width:100%" src="../figures/AppMapping.png">
+---
+# How is does this fit the Actor Model?
+--
+
+- Each core is an actor
+--
+
+- Can send and receive messages.
+---
+# What does this mean for Pony
+
+--
+
+- Each core has two 256B memory banks ~ 2 Pony actors
+- 12 64K independent memory banks
+- Core can use neighbors memory.
 
     </textarea>
     <!-- This is the link to the local copy of Remark -->
