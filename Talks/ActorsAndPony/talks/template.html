@@ -140,18 +140,38 @@ These transformations might require certain inputs and produce outputs, which me
 
 ---
 ## Functions Transforming Data values
+Based on lamba calculus data flows through "functional" units.  An old example is the language *dataflow*.
+- Has not concept of state.
+- Must use cyclic patterns to implement a system that changes state.
+
+---
+# Actors
+## Properties:
+1. Has private local data
+2. Can process local data
+3. Can send and recevie messages.
+
+### Incoming meassages map to a 3-tuple consisting of:
+1. A finite set of communication sent to other Actors
+2. A new behavior (which will govern the response to the next communication processed)
+3. A finite set of new actors created
 
 
 ---
-## Actors
-Actors are computational agents which map each incoming communication to a 3-tuple consisting of:
-1. a finite set of communication sent to other Actors
-2. a new behavior (which will govern the response to the next communication processed)
-3. a finite set of new actors created
-
+# History
+- 1973: Carl Hewitt was inspired by physics to create a new model to better fit reality.
+- He was influenced by Lisp, Simula and Smalltalk, particularly object oriented design.
+- 1985: Gul Agha publish thesis on formally defining the model.
 ---
 # Actor creation
-"Creation of new actors guarantees the ability to abstractly increase the distributivity of the computation as it evolves." - 14
+> "Creation of new actors guarantees the ability to abstractly increase the distributivity of the computation as it evolves." - Agha
+- Allows system to scale as needed.
+---
+#Global synchrony versus asynchronous elements
+In a distirbuted system global synchrony goes against realitivity.  There is no global clock, but rather many local ones.
+- It is easier to reason about the local state at any point, than the entire system.
+---
+<img  style="width:100%" src="../figures/globalMaster.png">
 ---
 ## Interaction Between agents
 Two classes:
@@ -160,9 +180,19 @@ Two classes:
 
 > Communication provides a mechanism by which each agent retains the integrity of information within it. - Agha
 ---
+## Shared Variables are Bad
+- This form of interaction does not allow for abstraction.
+- Programmer is responsible for specifying how variables are shared.
+  - This leads to many potential bugs including deadlock.
+---
+# Communication
+- Synchro
+---
 ## Degree of Fairness
 
->...a realistic model must assume that the arrival order of communications sent is both arbitrary and entirely unknown. In particular, the use of the arbiter as the hard- ware element for serialization implies that the arrival order is physically indeterminate.
+>...a realistic model must assume that the arrival order of communications sent is both arbitrary and entirely unknown. In particular, the use of the arbiter as the hardware element for serialization implies that the arrival order is physically indeterminate.
+- Indeterminism
+
 ---
 ### Guarantee of Delivery
 
@@ -170,9 +200,9 @@ Two classes:
 
 > There is, however, no general limit on buffers: the size of any real buffer will be specific to any particular implementation and 'its limitations. The point of building a semantic model is to abstract away from such details 'inherent 'in any implementation.
 
-The guarantee of delivery does not assume that each message is "meaningfully" processed.  An Actor could ignore a message on delivery or indefinitely buffer some communications.
+-The guarantee of delivery does not assume that each message is "meaningfully" processed.  An Actor could ignore a message on delivery or indefinitely buffer some communications.
 
-The guarantee of delivery is one form of *fairness*.  A strong requirement for fairness is that all messages sent are received in a random order no matter their properties.  A weaker one would be that a system delivers 3 "short" messages for each "long" it delivers.
+-The guarantee of delivery is one form of *fairness*.  A strong requirement for fairness is that all messages sent are received in a random order no matter their properties.  A weaker one would be that a system delivers 3 "short" messages for each "long" it delivers.
 
 ---
 ## Reconfigurability and Extensibility
@@ -185,12 +215,12 @@ If the *resource-manager* were static then it must either communicate with both 
 
 ---
 # Defining an Actor system
-> Computation in a system of actors is in response to communications sent to the system communications are contained in Tasks.
+> "Computation in a system of actors is in response to communications sent to the system communications are contained in Tasks." - Ahga
 
 Computing a task can result in new tasks and new actors.  Processed tasks and actors no longer "useful" can be removed safely from the system.  Thus the configuration of an actor system is defined by its actors and the set of all unprocessed tasks.
 ---
 # Tasks
-"a future 'is a communication that can be sent a communication to evaluate itself" - 34
+> "a future is a communication that can be sent a communication to evaluate itself" -
 
 ---
 # Description of actors
@@ -204,9 +234,15 @@ Thus we can imagine an actor having both a queue for messages as they arrive and
 <img style="width:100%" src="../figures/AbstractActor.png">
 ---
 .center[<img style="Width:90%" src="../figures/transition.png">]
+
 ---
 # Bank Analogy
 Imagine a bank in switzerland and a couple Alice and Bob that share the account.
+- The account starts with $100.
+- Bob wants to deposit $1.
+- Alice knows account will have $101 and wants to withdraw
+- With actor model which every communication arrives first the bank will service.
+- The account is protected from multiple requests by the atomicity of the bank actor.
 ---
 # Pony - Bank Example
 <img style="width:100%" src="../figures/BankAccount.png">
@@ -219,6 +255,27 @@ Imagine a bank in switzerland and a couple Alice and Bob that share the account.
 - There is no need for locks on the account because BankAccount actor runs atomically.
 ---
 
+# Simulation
+- Actors very naturally help to describe the agents in a dynamic system.
+
+--
+- Simula was designed with simulation in mind.  It had the concept of virtual time steps.
+
+--
+- CPU example
+  - At its core is a loop that executes instructions
+  - Pony becomes a recursive call, which is a message.
+  - This allows other actors to "interupt" the CPU by sending it a message.
+---
+# Pony Runtime
+- One scheduler thread per core by default
+  - Picks an actor to run when it has work to do.
+  - Uses Work stealing.  If one scheduling thread is free it will pick an actor queued on another scheduling thread.
+- Each actor has a message queue and heap
+  - This lets each actor Garbage collect between message computation
+- Causal message passing.  --> Will see this more in example.
+
+---
 # KiloCore - First 1000 core CPU
 --
 
