@@ -96,10 +96,11 @@ class: center, middle
 - Case Study: KiloCore
 
 ---
-Programming language design must balance efficiency in execution and expressiveness.
----
-"By concurrency we mean the potentially parallel execution of desired actions." - 3
----
+## Concurrency is not Parallelism
+.middle["Concurrency [is] the potentially parallel execution of desired actions" - Gul Agha]
+- Long studied issue in timesharing systems.
+- Becomes difficult when two concurrent executions need to use the same resource.
+
 > There is little interaction between the various "jobs" or "processes' that are executed concurrently. Indeed, the correctness of an operating system is dependent on making sure that none of the numerous (user-defined) processes affect each other.
 ---
 
@@ -140,6 +141,7 @@ These transformations might require certain inputs and produce outputs, which me
 ---
 ## Functions Transforming Data values
 
+
 ---
 ## Actors
 Actors are computational agents which map each incoming communication to a 3-tuple consisting of:
@@ -148,9 +150,15 @@ Actors are computational agents which map each incoming communication to a 3-tup
 3. a finite set of new actors created
 
 ---
+# Actor creation
 "Creation of new actors guarantees the ability to abstractly increase the distributivity of the computation as it evolves." - 14
 ---
 ## Interaction Between agents
+Two classes:
+1. Variables common between agents
+2. Communication between independent agents
+
+> Communication provides a mechanism by which each agent retains the integrity of information within it. - Agha
 ---
 ## Degree of Fairness
 
@@ -195,6 +203,11 @@ Thus we can imagine an actor having both a queue for messages as they arrive and
 ---
 <img style="width:100%" src="../figures/AbstractActor.png">
 ---
+.center[<img style="Width:90%" src="../figures/transition.png">]
+---
+# Bank Analogy
+Imagine a bank in switzerland and a couple Alice and Bob that share the account.
+---
 # Pony - Bank Example
 <img style="width:100%" src="../figures/BankAccount.png">
 ---
@@ -202,21 +215,21 @@ Thus we can imagine an actor having both a queue for messages as they arrive and
 ---
 <img style="width:100%" src="../figures/Main.png">
 ### Output
-```
-Failure: Not enough funds
-Success. Current Balance: $0
-Success. Current Balance: $101
-```
+<img style="width:60%" src="../figures/result.png">
 - There is no need for locks on the account because BankAccount actor runs atomically.
 ---
 
 # KiloCore - First 1000 core CPU
 --
 
-- Each processors operates at 1.78 GHz yielding a maximum total chip computation rate of __1.78 trillion instructions/sec__.
-- 32nm transitors, Made by IBM, which has 7nm transistors.
+- Each core operates at 1.78 GHz yielding a maximum total chip computation rate of __1.78 trillion instructions/sec__.
+- 32nm transitors, made by IBM, which has 7nm transistors.
+- Each core has local data and instruction memory.
+- Cores are networked in a latice.
 
-
+---
+# Traditional CPU
+.center[<img style="width:70%" src="../figures/Traditional.jpg">]
 ---
 <img style="width:100%"  src="../figures/core.png">
 ---
