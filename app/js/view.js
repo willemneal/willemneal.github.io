@@ -2,7 +2,7 @@
 
 const Login = { template: window.document.getElementById("login-temp").value }
 const Home = { template: window.document.getElementById("home-temp").value }
-const NotFound = {template: {"<p>noting there<p>"}}
+const NotFound = {template: "<p>noting there<p>"}
 const routes = {
   '/': Home,
   '/login': Login
