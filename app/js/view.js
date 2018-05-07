@@ -1,12 +1,30 @@
 
 
+// 0. If using a module system, call Vue.use(VueRouter)
+
+// 1. Define route components.
+// These can be imported from other files
 const Login = { template: window.document.getElementById("login-temp").value }
 const Home = { template: window.document.getElementById("home-temp").value }
-const NotFound = {template: "<p>noting there<p>"}
-const routes = {
-  '/': Home,
-  '/login': Login
-}
+
+// 2. Define some routes
+// Each route should map to a component. The "component" can
+// either be an actual component constructor created via
+// Vue.extend(), or just a component options object.
+// We'll talk about nested routes later.
+const routes = [
+  { path: '/', component: Home },
+  { path: '/login', component: Bar }
+]
+
+// 3. Create the router instance and pass the `routes` option
+// You can pass in additional options here, but let's
+// keep it simple for now.
+const router = new VueRouter({
+  routes
+})
+
+
 
 
 var app = new Vue({
@@ -15,8 +33,7 @@ var app = new Vue({
       email:"",
       password:"",
       account:null,
-      ready:false,
-      currentRoute: window.location.pathname
+      ready:false
     }
     ,
     methods: {
@@ -24,11 +41,6 @@ var app = new Vue({
         this.email = this.email.split('').reverse().join('')
       }
     },
-    computed: {
-    ViewComponent () {
-      return routes[this.currentRoute] || NotFound
-    }
-   },
-    render(h) { return h(this.ViewComponent) }
+    router
 
 })
