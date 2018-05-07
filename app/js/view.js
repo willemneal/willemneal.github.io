@@ -4,8 +4,10 @@
 
 // 1. Define route components.
 // These can be imported from other files
-const Login = { template: window.document.getElementById("login-temp") }
-const Home = { template: window.document.getElementById("home-temp") }
+const Login = { props: ["email","password"],
+                template: window.document.getElementById("login-temp") }
+const Home = { props: ["account","ready"],
+            template: window.document.getElementById("home-temp") }
 
 // 2. Define some routes
 // Each route should map to a component. The "component" can
