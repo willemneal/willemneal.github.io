@@ -1,0 +1,317 @@
+class Path {
+  static split(path){
+    return path.split("/")
+  }
+
+  static basename(path){
+    var folders = Path.split(path)
+    return folders[folders.length - 1]
+  }
+
+  static dirname(path){
+    var folders = Path.split(path)
+    var dir = folders.slice(0,folders.length - 1).join("/")
+    if (dir === ""){
+      dir = "/"
+    }
+    return dir
+  }
+}
+
+
+class FileSystem {
+    constructor(orbitdb){
+       this.orbitdb = orbitdb
+       this.pwd = "/"
+    }
+
+    async init() {
+      this.root = await this.orbitdb.keyvalue("fs", {sync: true, write:[]})
+      this.root.events.on("replicate", function(){
+           var lastAdded = this.root.all[this.root.all.length -1]
+           console.log("New item added to the directory "+
+                       lastAdded[parent] +"/"+lastAdded[name])
+         })
+      await this.root.load()
+      var root = await this.getDirDoc("/")
+      if (!root){
+        var newDirDB = await this.orbitdb.keyvalue("root",{"write":[]})
+        await this.root.put("/",
+                      {name:"/",
+                      parent:null,
+                      directory:true,
+                      database: newDirDB.address.toString()}
+                    )
+      }
+      var profile = await this.getDirDoc("/profile")
+      if (!profile) {
+        this.mkdir("/profile")
+      }
+    }
+
+    async mkdir(path, writers = []){
+      var parent = Path.dirname(path)
+      var basename = Path.basename(path)
+      var parentDoc = await this.root.get(parent)
+      var pathDoc = await this.root.get(path)
+      if (!parentDoc){
+        console.log("Parent directory does not exist")
+        return null
+      }
+      if (pathDoc){
+        console.log("Directory already exists")
+        return null
+      }
+      var newDirectoryDB = await this.orbitdb.keyvalue(path,{write:writers})
+      var newAddress = newDirectoryDB.address.toString()
+      this.root.put(path,
+                    {name:basename,
+                    parent:parent,
+                    directory:true,
+                    database: newAddress}
+                  )
+      var parentDoc = await this.getDirDoc(parent)
+      var parentDB = await this.orbitdb.keyvalue(parentDoc.database, {sync:true})
+      parentDB.events.on("ready", function() {
+        parentDB.put(basename, {name: basename,
+                                  directory:true,
+                                  database: newAddress})
+      })
+      await parentDB.load()
+    }
+
+    async getDirDoc(path){
+      return this.root.get(path)
+    }
+
+    async openDir(address){
+      var db = await this.orbitdb.keyvalue(address,{sync:true})
+      await db.load()
+      return db
+    }
+
+    async ls(path){
+      var pathDoc = await this.getDirDoc(path)
+      if (!pathDoc){
+        log.console("Path Does not exist")
+        return null
+      }
+      var pathDB = await this.openDir(pathDoc.database)
+      return pathDB.all
+    }
+
+    async getDir(path){
+      var dirDoc = await this.getDirDoc(path)
+      var address = dirDoc.database
+      return this.openDir(address)
+    }
+
+    async touch(path){
+      var basename = Path.basename(path)
+      var dirDB =  await this.getDir(Path.dirname(path))
+      var file = await dirDB.get(basename)
+      if (file){
+        return
+      }
+      dirDB.put(basename,{name:basename,directory:false,content:null})
+    }
+
+}
+
+
+class Account {
+    constructor(OrbitDB, ipfs){
+        this.storage = window.localStorage
+        this.OrbitDB = OrbitDB // constructor
+        this.accountDBName = "/orbitdb/QmWfN1JwLknbVfCZ3tZ6aZC9PHbbK2cX7RtZnzukKgUfMX/Accounts!"
+        this.DBdirectory = "./orbitdb"
+        this.options = {}
+        this.init(ipfs)
+        this.createAccountDB()
+
+    }
+
+  init(ipfs){
+      if (this.loggedin){
+         this.options = {peerId:this.fromStorage()}
+      }
+      this.orbitdb = new OrbitDB(ipfs, this.DBdirectory, this.options)
+  }
+
+    get loggedin() {
+      return !(null === this.storage.getItem("account")) &&
+             this.orbitdb &&
+             this.orbitdb.id === this.storage.getItem("account")
+    }
+
+    saveAccount(){
+      this.storage.setItem("account", this.orbitdb.id)
+    }
+
+    fromStorage(){
+      return this.storage.getItem("account")
+    }
+
+    async createAccountDB() {
+      this.db = await this.orbitdb.open(this.accountDBName, { sync: true })
+      await this.db.load()
+      console.log("accountDB loaded "+ this.db.address.toString())
+    }
+
+
+    async createAccount(email, password) {
+      if (this.loggedin){
+        console.log("already signed in")
+        return
+      }
+      var emailText = email
+      var hashText = await hash(emailText)
+      console.log("creating account for " + emailText)
+      var AccountOptions
+      var lookup = await this.db.get(hashText)
+      if (!lookup){
+         AccountOptions = await this.encryptAccountOptions(password)
+         AccountOptions.encBuffer = arrayBuf2UintArray(AccountOptions.encBuffer)
+         await this.db.put(hashText, JSON.stringify(AccountOptions))
+      }
+      var res = await this.db.get(hashText)
+      console.log(res)
+    }
+
+    lookupAccount(email,password) {
+      return (async () => {
+         var emailText = email
+         console.log("looking up Account with email "+ emailText)
+
+          var found = await this.db.get(await hash(emailText))
+          if (!found){
+            console.log("account doesn't exist")
+            return false
+          }
+          const docs = JSON.parse(found)
+
+          var ivArray = []
+          var key
+          for (key in docs.iv){
+            ivArray[key] = docs.iv[key]
+          }
+          var encBuf = []
+          for (key in docs.encBuffer){
+            encBuf[key] = docs.encBuffer[key]
+          }
+          docs.iv = new Uint8Array(ivArray)
+          docs.encBuffer = (new Uint8Array(encBuf)).buffer
+
+          var AccountOptions = await this.decryptAccountOptions(docs, password)
+
+          console.log(JSON.stringify(AccountOptions))
+          // AccountOptions.keystore.getKey = function (id){
+          //   return JSON.parse(AccountOptions.keystore._storage[id])}
+          return AccountOptions
+      })()
+
+    }
+
+    get ipfs(){
+      return this.orbitdb._ipfs
+    }
+
+    get key() {
+      return this.orbitdb.key
+    }
+
+    get keystore(){
+      return this.orbitdb.keystore
+    }
+
+    get id() {
+      return this.orbitdb.id
+    }
+
+    get publicKey() {
+      return this.key.getPublic("hex")
+    }
+
+    sign(data) {
+      return this.keystore.sign(this.key, data)
+    }
+
+    verify(signature, key, data){
+      return this.keystore.verify(signature, key, data)
+    }
+    async encryptAccountOptions(password) {
+      const toEncrypt = JSON.stringify({keystore:this.orbitdb.keystore._storage, peerId :this.orbitdb.id})
+      console.log(toEncrypt);
+      return encryptText(toEncrypt,password)
+    }
+    async decryptAccountOptions(cipherText, password) {
+      return JSON.parse(await decryptText(cipherText.encBuffer, cipherText.iv,password))
+    }
+
+    async login(email, password){
+      if (this.loggedin){
+        console.log("already logged in")
+        return
+      }
+      var oldId = this.orbitdb.id
+      var options = await account.lookupAccount(email, password)
+      if (!options){
+        return
+      }
+      this.orbitdb.id = options["peerId"]
+      this.orbitdb.keystore._storage[this.orbitdb.id] = options["keystore"][this.orbitdb.id]
+      this.orbitdb = new OrbitDB(this.orbitdb._ipfs,this.orbitdb.directory, {peerId: this.orbitdb.id, keystore:this.orbitdb.keystore})
+      console.log("old id "+ oldId + " new id: " + options.peerId)
+      this.saveAccount()
+      console.log(this.loggedin ? "logged in!": "login Failed :-(")
+    }
+
+    logout(){
+      this.storage.removeItem("account")
+    }
+
+    connectedPeers() {
+      return this.ipfs.pubsub.peers(db.address.toString())
+    }
+}
+
+class Message {
+   constructor(body, key){
+     this.msg.body = body
+   }
+
+}
+
+
+class Petition {
+   constructor(account, name, desc){
+      this.account = account
+      this.name = name;
+      (async () => {
+      this.db = await account.orbitdb.keyvalue(name, {write:[]})
+      this.hash = await this.db.put("desc", desc)
+      this.publicDB = await account.orbitdb.keyvalue(name, {write:["*"]})
+      this.db.put("address", this.publicDB.address.toString())
+      }
+    ) ()
+   }
+
+   get desc(){
+     return this.db.get("desc")
+   }
+
+   get publicDB (){
+     return this.db.get("address")
+   }
+
+   sign(account) {
+     var signature = account.sign(this.desc)
+     var publicKey = account.publicKey
+     this.publicDB.put(publicKey, signature)
+   }
+
+   static createPetition(address){
+
+   }
+
+}
