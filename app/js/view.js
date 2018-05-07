@@ -14,7 +14,7 @@ const Home = { template: window.document.getElementById("home-temp").value }
 // We'll talk about nested routes later.
 const routes = [
   { path: '/', component: Home },
-  { path: '/login', component: Bar }
+  { path: '/login', component: Login }
 ]
 
 // 3. Create the router instance and pass the `routes` option
