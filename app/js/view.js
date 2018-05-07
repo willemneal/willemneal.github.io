@@ -1,11 +1,11 @@
 
-const NotFound = { template: '<p>Page not found</p>' }
-const Home = { template: '<p>home page</p>' }
-const About = { template: '<p>about page</p>' }
 
+const Login = { template: window.document.getElementById("login-temp").value }
+const Home = { template: window.document.getElementById("home-temp").value }
+const NotFound = {template: {"<p>noting there<p>"}}
 const routes = {
   '/': Home,
-  '/about': About
+  '/login': Login
 }
 
 

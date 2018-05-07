@@ -12,23 +12,36 @@
       main()
     </script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
     <script type="text/javascript" src="js/view.js" defer></script>
+
   </head>
 
   <body>
+    <template id="login-temp">
+      <div id=login>
+          <input v-model="email" id="email" type="text" placeholder="Enter email of account"/>
+          <input  v-model="password" id="password" type="password" placeholder="Enter password for encryption/decryption"/>
+          <button v-on:click="reverseMessage" id="createAccount" type="button" >Create Account</button>
+          <button id="lookupAccount" type="button" >Lookup Account</button>
+      </div>
+    </template>
+    <template id="home-temp">
+        <div v-if="ready">
+          Current Peer Id : {{account.orbitdb.id}} <br>
+          Currently Logged In: {{account.loggedin}}
+       </div>
+    </template>
 
 
     <div id=app>
-      <div v-if="ready">
-        Current Peer Id : {{account.orbitdb.id}} <br>
-        Currently Logged In: {{account.loggedin}}
-        <div id=login>
-            <input v-model="email" id="email" type="text" placeholder="Enter email of account"/>
-            <input  v-model="password" id="password" type="password" placeholder="Enter password for encryption/decryption"/>
-            <button v-on:click="reverseMessage" id="createAccount" type="button" >Create Account</button>
-            <button id="lookupAccount" type="button" >Lookup Account</button>
-        </div>
-     </div>
+      <router-link to="/foo">Go to Foo</router-link>
+    <router-link to="/bar">Go to Bar</router-link>
+  </p>
+  <!-- route outlet -->
+  <!-- component matched by the route will render here -->
+  <router-view></router-view>
+
     </div>
   </body>
 </html>
