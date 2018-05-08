@@ -65,6 +65,7 @@ var app = new Vue({
               if (cameras.length == 1){
                 scanner.start(cameras[0]);
               } else {
+                scanner.mirror = false;
                 scanner.start(cameras[1]);
               }
             } else {
