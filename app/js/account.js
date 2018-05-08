@@ -18,7 +18,6 @@ class Path {
   }
 }
 
-
 class FileSystem {
     constructor(orbitdb){
        this.orbitdb = orbitdb
@@ -62,7 +61,7 @@ class FileSystem {
         console.log("Directory already exists")
         return null
       }
-      var newDirectoryDB = await this.orbitdb.keyvalue(path,{write:writers})
+      var newDirectoryDB = await this.orbitdb.keyvalue(path, {write:writers})
       var newAddress = newDirectoryDB.address.toString()
       this.root.put(path,
                     {name:basename,
@@ -71,7 +70,7 @@ class FileSystem {
                     database: newAddress}
                   )
       var parentDoc = await this.getDirDoc(parent)
-      var parentDB = await this.orbitdb.keyvalue(parentDoc.database, {sync:true})
+      var parentDB = await this.orbitdb.keyvalue(parentDoc.database,{sync:true})
       parentDB.events.on("ready", function() {
         parentDB.put(basename, {name: basename,
                                   directory:true,
@@ -254,7 +253,7 @@ class Account {
         return
       }
       var oldId = this.orbitdb.id
-      var options = await account.lookupAccount(email, password)
+      var options = await this.lookupAccount(email, password)
       if (!options){
         return
       }

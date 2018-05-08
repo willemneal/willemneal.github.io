@@ -1,9 +1,6 @@
-
 function handleError(e) {
   console.error(e.stack)
 }
-
-
 
 
 

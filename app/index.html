@@ -14,34 +14,35 @@
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
     <script type="text/javascript" src="js/view.js" defer></script>
-
+    <script type="text/javascript" src="js/qrcode.min.js"></script>
+    <script type="text/javascript" src="https://github.com/schmich/instascan/releases/download/1.0.0/instascan.min.js"></script>
   </head>
-
-  <body>
-    <template id="login-temp">
-      <div id=login>
-          <input v-model="email" id="email" type="text" placeholder="Enter email of account"/>
-          <input  v-model="password" id="password" type="password" placeholder="Enter password for encryption/decryption"/>
-          <button v-on:click="reverseMessage" id="createAccount" type="button" >Create Account</button>
-          <button id="lookupAccount" type="button" >Lookup Account</button>
-      </div>
-    </template>
-    <template id="home-temp">
-        <div v-if="ready">
-          Current Peer Id : {{account.orbitdb.id}} <br>
-          Currently Logged In: {{account.loggedin}}
-       </div>
-    </template>
 
 
     <div id=app>
-      <router-link to="/">Home</router-link>
-      <router-link to="/login">login</router-link>
+      <div v-if="ready">
+        Current Peer Id : {{account.orbitdb.id}} <br>
+        Currently Logged In: {{account.loggedin}}
 
-      <!-- route outlet -->
-      <!-- component matched by the route will render here -->
-      <router-view></router-view>
+        <div id="login">
+            <input v-model="email" id="email" type="text" placeholder="Enter email of account"/>
+            <input  v-model="password" id="password" type="password" placeholder="Enter password for encryption/decryption"/>
+            <button v-on:click="createAccount" id="createAccount" type="button" >Create Account</button>
+            <button @click="login" id="lookupAccount" type="button" >Lookup Account</button>
+        </div>
 
+        <div id="qr">
+            <div id=qrcode v-html="qrCode"></div>
+            <button @click="createQRCode" id="QRbutton" type="button"> Create QRCode </button>
+
+        </div>
+      </div>
+
+      <div>
+          <button @click="scanQRCode" id="QRScanner" type="button">scan QRCode </button>
+          <video id="preview"></video>
+      </div>
     </div>
+
   </body>
 </html>
