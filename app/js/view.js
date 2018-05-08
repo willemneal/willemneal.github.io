@@ -45,6 +45,9 @@ var app = new Vue({
       login: function(){
         this.account.login(this.email, this.password)
       },
+      logout: function(){
+        window.localStorage.removeItem("account")
+      },
       createQRCode : function() {
         var qrcode = new QRCode(document.getElementById("qrcode"), {
         text: this.account.publicKey.toString(),
@@ -75,6 +78,7 @@ var app = new Vue({
             console.error(e);
           });
       }
+
     }
 
 })
