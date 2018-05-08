@@ -16,9 +16,8 @@
     <script type="text/javascript" src="js/view.js" defer></script>
     <script type="text/javascript" src="js/qrcode.min.js"></script>
     <script type="text/javascript" src="https://github.com/schmich/instascan/releases/download/1.0.0/instascan.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openpgp/3.0.9/openpgp.min.js"></script>
   </head>
-
-
     <div id=app>
       <div v-if="ready">
         Current Peer Id : {{account.orbitdb.id}} <br>
@@ -35,15 +34,12 @@
         <div id="qr">
             <div id=qrcode v-html="qrCode"></div>
             <button @click="createQRCode" id="QRbutton" type="button"> Create QRCode </button>
-
         </div>
       </div>
-
       <div>
           <button @click="scanQRCode" id="QRScanner" type="button">scan QRCode </button>
           <video id="preview"></video>
       </div>
     </div>
-
   </body>
 </html>

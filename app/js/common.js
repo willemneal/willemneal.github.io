@@ -149,3 +149,13 @@ function getDatabaseFromURL () {
   var location = window.location.href.split("?")
   return location.length > 1 ? location[1] : false;
 }
+function convert(Uint8Arr) {
+    var length = Uint8Arr.length;
+    let buffer = Buffer.from(Uint8Arr);
+    var result = buffer.readUIntBE(0, length);
+    return result;
+}
+
+function randomNonce(size){
+  return convert(crypto.getRandomValues(new Uint8Array(size)))
+}

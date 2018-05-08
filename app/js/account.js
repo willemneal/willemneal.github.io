@@ -46,17 +46,18 @@ class FileSystem {
       if (!profile) {
         this.mkdir("/profile")
       }
+      this.mkdir("/contacts")
     }
 
     async mkdir(path, writers = []){
       var parent = Path.dirname(path)
       var basename = Path.basename(path)
       var parentDoc = await this.root.get(parent)
-      var pathDoc = await this.root.get(path)
       if (!parentDoc){
         console.log("Parent directory does not exist")
         return null
       }
+      var pathDoc = await this.root.get(path)
       if (pathDoc){
         console.log("Directory already exists")
         return null
@@ -116,7 +117,48 @@ class FileSystem {
     }
 
 }
+class Message {
+   constructor(body, key){
+     this.msg.body = body
+   }
 
+}
+
+class Key {
+  constructor(name){
+      this.options = {curve: "ed25519",
+                    userIds:[{name:name}],
+                    passphrase:""}
+  }
+  async init() {
+    var key = await openpgp.generateKey(this.options)
+    this.key = key
+  }
+  get pubArmored(){
+    return this.key.publicKeyArmored
+  }
+
+  get privArmored(){
+    return this.key.privateKeyArmored
+  }
+
+  get pub(){
+    return openpgp.key.readArmored(this.pubArmored).keys
+  }
+
+  get priv(){
+    return openpgp.key.readArmored(this.privArmored).keys[0]
+  }
+
+  async sign(data){
+    return openpgp.sign({data:data, privateKeys:this.priv})
+  }
+
+  async verify(data, publicKey){
+    return openpgp.verify({message:openpgp.cleartext.readArmored(data.data), publicKeys:publicKey})
+
+  }
+}
 
 class Account {
     constructor(OrbitDB, ipfs){
@@ -130,12 +172,16 @@ class Account {
 
     }
 
-  init(ipfs){
-      if (this.loggedin){
-         this.options = {peerId:this.fromStorage()}
-      }
-      this.orbitdb = new OrbitDB(ipfs, this.DBdirectory, this.options)
-  }
+    init(ipfs){
+        if (this.loggedin){
+           this.options = {peerId:this.fromStorage()}
+        }
+        this.orbitdb = new OrbitDB(ipfs, this.DBdirectory, this.options)
+        if (this.loggedin){
+          this.login("","")
+        }
+
+    }
 
     get loggedin() {
       return !(null === this.storage.getItem("account")) &&
@@ -250,19 +296,21 @@ class Account {
     async login(email, password){
       if (this.loggedin){
         console.log("already logged in")
-        return
+      }else{
+        var oldId = this.orbitdb.id
+        var options = await this.lookupAccount(email, password)
+        if (!options){
+          return
+        }
+        this.orbitdb.id = options["peerId"]
+        this.orbitdb.keystore._storage[this.orbitdb.id] = options["keystore"][this.orbitdb.id]
+        this.orbitdb = new OrbitDB(this.orbitdb._ipfs,this.orbitdb.directory, {peerId: this.orbitdb.id, keystore:this.orbitdb.keystore})
+        console.log("old id "+ oldId + " new id: " + options.peerId)
+        this.saveAccount()
+        console.log(this.loggedin ? "logged in!": "login Failed :-(")
       }
-      var oldId = this.orbitdb.id
-      var options = await this.lookupAccount(email, password)
-      if (!options){
-        return
-      }
-      this.orbitdb.id = options["peerId"]
-      this.orbitdb.keystore._storage[this.orbitdb.id] = options["keystore"][this.orbitdb.id]
-      this.orbitdb = new OrbitDB(this.orbitdb._ipfs,this.orbitdb.directory, {peerId: this.orbitdb.id, keystore:this.orbitdb.keystore})
-      console.log("old id "+ oldId + " new id: " + options.peerId)
-      this.saveAccount()
-      console.log(this.loggedin ? "logged in!": "login Failed :-(")
+      this.fs = new FileSystem(this.orbitdb)
+      await this.fs.init()
     }
 
     logout(){
@@ -272,14 +320,22 @@ class Account {
     connectedPeers() {
       return this.ipfs.pubsub.peers(db.address.toString())
     }
+
+    newContactCard() {
+      var tempDB = this.orbitdb.eventlog(randomNonce(8),{create:true, overwrite:true, write:["*"]})
+      var nonce = randomNonce(8)
+      this.tempDBs[tempDB.address.toString()] = tempDB
+      tempDB.events.on("replicate", function(){
+          var message = tempDB.all[tempDB.all.length-1]
+
+      })
+
+
+
+    }
 }
 
-class Message {
-   constructor(body, key){
-     this.msg.body = body
-   }
 
-}
 
 
 class Petition {

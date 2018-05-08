@@ -40,10 +40,10 @@ var app = new Vue({
     ,
     methods: {
       createAccount: function () {
-        this.account.createAccount(this.email, this.password)
+        this.account.createAccount(this.email.toLowerCase(), this.password)
       },
       login: function(){
-        this.account.login(this.email, this.password)
+        this.account.login(this.email.toLowerCase(), this.password)
       },
       logout: function(){
         window.localStorage.removeItem("account")
