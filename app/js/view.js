@@ -4,10 +4,9 @@
 
 // 1. Define route components.
 // These can be imported from other files
-const Login = { props: ["email","password"],
+const Login = { data: {email:"",password:""}
                 template: window.document.getElementById("login-temp") }
-const Home = { props: ["account","ready"],
-            template: window.document.getElementById("home-temp") }
+const Home = {  template: window.document.getElementById("home-temp")}
 
 // 2. Define some routes
 // Each route should map to a component. The "component" can
@@ -32,8 +31,6 @@ const router = new VueRouter({
 var app = new Vue({
     el: '#app',
     data: {
-      email:"",
-      password:"",
       account:null,
       ready:false
     }
