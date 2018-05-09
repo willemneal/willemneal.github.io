@@ -45,8 +45,7 @@ const main = (IPFS, ORBITDB) => {
     console.log(ipfs._peerInfo.id._idB58String)
     var account = new Account(OrbitDB, ipfs)
     console.log("public key: " + account.orbitdb.key.getPublic('hex'))
-    app.account = account
-    app.ready = true
+    createApp(account)
   })
 }
 

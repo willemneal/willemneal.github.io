@@ -226,7 +226,7 @@ class Contact {
   async sendFirstMessage(account,dbAddr){
     this.tempDB =  await account.orbitdb.log(dbAddr,{sync:true,create:true})
     await this.tempDB.load()
-    var privDatabase = await account.orbitdb.feed(this.peerID +"X"+account.id, {create:true})
+    var privDatabase = await account.orbitdb.feed(this.peerID +"X"+account.id, {create:true, write:[this.peerID,account.id]})
     this.channel = new EncryptedChannel(privDatabase,account.keys,this.publicKey)
     var message = {peerID:account.id,
                         publicKey:account.publicKey,
@@ -408,28 +408,31 @@ class Account {
         return
       this.tempDB = await this.orbitdb.eventlog(randomNonce(8)+"",{create:true, overwrite:true, write:["*"]})
       var nonce = randomNonce(8)
-      this.nonce = nonce
       var card = {nonce:nonce,
                   dbAddr: this.tempDB.address.toString(),
                   publicKey:this.publicKey,//this.key.pub,
                   peerID:this.id
       }
-
-      this.tempDB.events.on("replicate",this.receiveFirstMessage)
+      var db = this.tempDB
+      await db.load()
+      this.tempDB.events.on("replicate", function(){
+        db.load().then(function(){
+        var message = db.iterator().collect()[0]
+        if (message.msg.nonce === nonce){
+          addContact({peerID: message.id,
+                      publicKey: message.publicKey,
+                      channel: message.msg.channel})
+          db.drop()
+        })
+        } else{
+          console.log("NONCE IS NOT CORRECT")
+        }
+      })
       return card
     }
 
     receiveFirstMessage(){
-      var message = this.tempDB.iterator().collect()[0]
-      if (message.msg.nonce === nonce){
-        addContact({peerID: message.id,
-                    publicKey: message.publicKey,
-                    channel: message.msg.channel})
-        this.tempDB.drop()
-        this.tempDB = null
-      } else{
-        console.log("NONCE IS NOT CORRECT")
-      }
+
     }//TODO Move callback here
 
     async addContact(info){

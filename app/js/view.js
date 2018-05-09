@@ -24,10 +24,11 @@
 // const router = new VueRouter({
 //   routes
 // })
+var app = null
 
 
-
-var app = new Vue({
+const createApp = function (account) {
+  app = new Vue({
     el: '#app',
     data: {
       account:null,
@@ -59,30 +60,35 @@ var app = new Vue({
         })
       },
       scanQRCode : function() {
-          const addContact = function(card){
-            this.account.addContact(card)
-          }
-          let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
-          scanner.addListener('scan', function (content) {
-            alert(content);
-            addContact(JSON.parse(content))
-          });
-          Instascan.Camera.getCameras().then(function (cameras) {
-            if (cameras.length > 0) {
-              if (cameras.length == 1){
-                scanner.start(cameras[0]);
-              } else {
-                scanner.mirror = false;
-                scanner.start(cameras[1]);
-              }
-            } else {
-              console.error('No cameras found.');
-            }
-          }).catch(function (e) {
-            console.error(e);
-          });
+          (function(account){
+              let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
+              scanner.addListener('scan', function (content) {
+                alert(content);
+                account.addContact(JSON.parse(content))
+
+              });
+              Instascan.Camera.getCameras().then(function (cameras) {
+                if (cameras.length > 0) {
+                  if (cameras.length == 1){
+                    scanner.start(cameras[0]);
+                  } else {
+                    scanner.mirror = false;
+                    scanner.start(cameras[1]);
+                  }
+                } else {
+                  console.error('No cameras found.');
+                }
+              }).catch(function (e) {
+                console.error(e);
+              });
+        })(this.account)
       }
 
     }
 
 })
+app.account = account
+app.ready = true
+}
+
+main()
