@@ -228,7 +228,7 @@ class Account {
       this.db = await this.orbitdb.open(this.accountDBName, { sync: true })
       await this.db.load()
       this.worker = new Worker("js/actor.js")
-      this.worker.postMessage(this.db)
+      this.worker.postMessage("In worker" + this.db.address.toString())
       console.log("accountDB loaded "+ this.db.address.toString())
     }
 
