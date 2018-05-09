@@ -151,8 +151,10 @@ function getDatabaseFromURL () {
 }
 function convert(Uint8Arr) {
     var length = Uint8Arr.length;
-    let buffer = Buffer.from(Uint8Arr);
-    var result = buffer.readUIntBE(0, length);
+    var result = 0
+    for (var i=0;i<length;i++){
+      result += (10**i) * Uint8Arr[i]
+    }
     return result;
 }
 

@@ -48,11 +48,11 @@ var app = new Vue({
       logout: function(){
         window.localStorage.removeItem("account")
       },
-      createQRCode : function() {
+      createQRCode : async function() {
         var qrcode = new QRCode(document.getElementById("qrcode"), {
-        text: this.account.publicKey.toString(),
-        width: 128,
-        height: 128,
+        text: JSON.stringify(await this.account.newContactCard()),
+        width: 256,
+        height: 256,
         colorDark : "#000000",
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.H
@@ -62,6 +62,8 @@ var app = new Vue({
           let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
           scanner.addListener('scan', function (content) {
             alert(content);
+            this.account.addContact(JSON.parse(content))
+
           });
           Instascan.Camera.getCameras().then(function (cameras) {
             if (cameras.length > 0) {

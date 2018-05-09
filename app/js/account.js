@@ -167,21 +167,73 @@ class Channel {
     if (res){
       console.log(res)
     }
-    this.messages = database.iterator({limit:10}).collect()
+    this.messages = database.iterator({limit:this.limit}).collect()
   }
 
   write(message){
     this.database.add(message)
   }
 
+  set limit(x){
+    this.limit = x
+  }
 
+  update(){
+    read("updating")
+  }
 
 }
 
+class EncryptedChannel extends Channel{
+  //TODO: add encryption ;-)
+  constructor(database,myKeys,theirKey){
+    super(database)
+    this.myKeys = myKeys
+    this.theirKeys = theirKey
+
+  }
+  read(res){
+    this.messages = database.iterator({limit:this.limit}).collect()
+  }
+
+  async write(message){
+    var hash = await this.database.add(message)
+  }
+
+  set limit(x){
+    this.limit = x
+  }
+}
+
 class Contact {
-  constructor(publicKey, database){
-    this.publicKey = publicKey
-    this.database = database
+  //Here we just scanned the QRCode and learned
+  //publicKey, peerID, database Address, Nonce
+  //and what nonce to include to prove it was us.
+  constructor(account, info){
+    this.publicKey = info.publicKey
+    this.peerID = info.peerID
+    if (info.nonce){
+          this.nonce = info.nonce
+          this.sendFirstMessage(account,info.dbAddr)
+    }
+    if (info.msg){
+      this.channel = new EncryptedChannel(info.channel,
+                                          account.keys,
+                                          this.publicKey)
+    }
+  }
+
+  async sendFirstMessage(account,dbAddr){
+    this.tempDB =  await account.orbitdb.log(dbAddr,{sync:true,create:true})
+    await this.tempDB.load()
+    var privDatabase = await account.orbitdb.feed(this.peerID +"X"+account.id, {create:true})
+    this.channel = new EncryptedChannel(privDatabase,account.keys,this.publicKey)
+    var message = {peerID:account.id,
+                        publicKey:account.publicKey,
+                        msg:
+                        {channel: privDatabase.address.toString(),
+                        nonce:this.nonce}}
+    this.tempDB.add(message)
   }
 
 
@@ -196,6 +248,7 @@ class Account {
         this.options = {}
         this.init(ipfs)
         this.createAccountDB()
+        this.contacts = {}
 
     }
 
@@ -350,17 +403,35 @@ class Account {
       return this.ipfs.pubsub.peers(db.address.toString())
     }
 
-    newContactCard() {
-      var tempDB = this.orbitdb.eventlog(randomNonce(8),{create:true, overwrite:true, write:["*"]})
+    async newContactCard() {
+
+      this.tempDB = await this.orbitdb.eventlog(randomNonce(8)+"",{create:true, overwrite:true, write:["*"]})
       var nonce = randomNonce(8)
-      this.tempDBs[tempDB.address.toString()] = tempDB
-      tempDB.events.on("replicate", function(){
-          var message = tempDB.all[tempDB.all.length-1]
+      this.nonce = nonce
+      var card = {nonce:nonce,
+                  dbAddr: this.tempDB.address.toString(),
+                  publicKey:this.publicKey,//this.key.pub,
+                  peerID:this.id
+      }
 
-      })
+      this.tempDB.events.on("replicate",this.receiveFirstMessage)
+      return card
+    }
 
+    receiveFirstMessage(){
+      var message = this.tempDB.iterator().collect()[0]
+      if (message.msg.nonce === nonce){
+        addContact({peerID:message.id,
+                    publicKey:message.publicKey,
+                    channel:message.msg.channel})
+        this.tempDB.drop()
+      } else{
+        console.log("NONCE IS NOT CORRECT")
+      }
+    }//TODO Move callback here
 
-
+    async addContact(info){
+      this.contacts[info.peerID] = new Contact(this, info)
     }
 }
 
