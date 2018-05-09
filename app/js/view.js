@@ -59,11 +59,13 @@ var app = new Vue({
         })
       },
       scanQRCode : function() {
+          const addContact = function(card){
+            this.account.addContact(card)
+          }
           let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
           scanner.addListener('scan', function (content) {
             alert(content);
-            this.account.addContact(JSON.parse(content))
-
+            addContact(JSON.parse(content))
           });
           Instascan.Camera.getCameras().then(function (cameras) {
             if (cameras.length > 0) {

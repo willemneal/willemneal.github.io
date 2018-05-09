@@ -404,7 +404,8 @@ class Account {
     }
 
     async newContactCard() {
-
+      if (this.tempDB)
+        return
       this.tempDB = await this.orbitdb.eventlog(randomNonce(8)+"",{create:true, overwrite:true, write:["*"]})
       var nonce = randomNonce(8)
       this.nonce = nonce
@@ -421,10 +422,11 @@ class Account {
     receiveFirstMessage(){
       var message = this.tempDB.iterator().collect()[0]
       if (message.msg.nonce === nonce){
-        addContact({peerID:message.id,
-                    publicKey:message.publicKey,
-                    channel:message.msg.channel})
+        addContact({peerID: message.id,
+                    publicKey: message.publicKey,
+                    channel: message.msg.channel})
         this.tempDB.drop()
+        this.tempDB = null
       } else{
         console.log("NONCE IS NOT CORRECT")
       }
