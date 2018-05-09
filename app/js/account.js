@@ -117,12 +117,6 @@ class FileSystem {
     }
 
 }
-class Message {
-   constructor(body, key){
-     this.msg.body = body
-   }
-
-}
 
 class Key {
   constructor(name){
@@ -150,14 +144,47 @@ class Key {
     return openpgp.key.readArmored(this.privArmored).keys[0]
   }
 
-  async sign(data){
-    return openpgp.sign({data:data, privateKeys:this.priv})
+  async sign(data,privateKey=this.priv){
+    return openpgp.sign({data:data, privateKeys:privateKey})
   }
 
   async verify(data, publicKey){
     return openpgp.verify({message:openpgp.cleartext.readArmored(data.data), publicKeys:publicKey})
 
   }
+}
+class Message {
+
+}
+
+class Channel {
+  constructor(database){
+    this.database = database
+    this.database.events.on("replicate",this.read)
+  }
+
+  read(res){
+    if (res){
+      console.log(res)
+    }
+    this.messages = database.iterator({limit:10}).collect()
+  }
+
+  write(message){
+    this.database.add(message)
+  }
+
+
+
+}
+
+class Contact {
+  constructor(publicKey, database){
+    this.publicKey = publicKey
+    this.database = database
+  }
+
+
 }
 
 class Account {
@@ -200,6 +227,8 @@ class Account {
     async createAccountDB() {
       this.db = await this.orbitdb.open(this.accountDBName, { sync: true })
       await this.db.load()
+      this.worker = new Worker("actor.js")
+      this.worker.postMessage(this.db)
       console.log("accountDB loaded "+ this.db.address.toString())
     }
 
